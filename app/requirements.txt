@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+langchain
+langchain-google-genai
+langchain-community
+chromadb
+pypdf
+langchain-text-splitters
+sentence-transformers
+pytest
+pytest-mock
+requests
+httpx
+tensorflow   #  or tensorflow-macos if you're on macOS

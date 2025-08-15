@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: rag_api_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+    env_file:
+      - .env
+    depends_on:
+      - chromadb
+    networks:
+      - rag_network
+
+  chromadb:
+    image: chromadb/chroma:0.4.15
+    container_name: chromadb_service
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - rag_network
+
+volumes:
+  chroma_data:
+
+networks:
+  rag_network:
+    driver: bridge
