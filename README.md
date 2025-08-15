@@ -16,9 +16,8 @@ It is fully containerized with Docker and tested with `pytest`.
 
 ## 📦 Postman Collection
 
-* **Public Postman Collection URL:** `https://www.postman.com/collections/ADD_YOUR_PUBLIC_COLLECTION_URL`
+* **Public Postman Collection URL:** [https://documenter.getpostman.com/view/34900185/2sB3BHkTvL](https://documenter.getpostman.com/view/34900185/2sB3BHkTvL)
 
-  > Replace `ADD_YOUR_PUBLIC_COLLECTION_URL` with your actual public link from Postman (Share → Create public link).
 
 **Recommended Postman Environment**
 
@@ -93,24 +92,18 @@ pip install -r app/requirements.txt
 Create a `.env` file in the project root:
 
 ```dotenv
-APP_ENV=dev
-PORT=8000
 
 # Embeddings
 EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 
 # Vector DB
-CHROMA_DIR=/data/chroma
+CHROMA_HOST="your locally chroma host location or https://chroma-kkpc.onrender.com(hosted on render)"
+CHROMA_PORT="your chroma port"
 CHROMA_COLLECTION=rag_docs
 
 # LLM (Gemini)
 GOOGLE_API_KEY=your_google_api_key
-GENAI_MODEL=gemini-1.5-pro
-GENAI_TEMPERATURE=0.2
-GENAI_MAX_OUTPUT_TOKENS=1024
 
-# Metadata DB
-METADATA_DB=app/db/metadata.db
 ```
 
 ---
@@ -181,9 +174,7 @@ docker compose up --build
 
 ## 📚 API Endpoints
 
-### Health
 
-* `GET /health` → `{ "status": "ok" }`
 
 ### Documents
 
@@ -203,8 +194,7 @@ docker compose up --build
 
     ```json
     {
-      "question": "What are the key safety findings?",
-      "top_k": 5
+      "query": "What are the key safety findings?"
     }
     ```
   * Response:
@@ -261,32 +251,9 @@ Includes:
 
 * **Upload tests** (`tests/test_upload.py`)
 * **Query tests** (`tests/test_query.py`)
-* API tests for invalid inputs (too many docs, oversized files, empty queries)
 
-**Example (`tests/test_query.py`)**
 
-```python
-def test_query_returns_answer(client):
-    resp = client.post("/query", json={"question": "Summarize abstract"})
-    data = resp.json()
-    assert resp.status_code == 200
-    assert "answer" in data
-    assert isinstance(data["sources"], list)
 ```
-
----
-
-## ✅ Submission Checklist
-
-* [x] RAG pipeline with FastAPI + LangChain
-* [x] Upload + query endpoints with Chroma + Gemini
-* [x] Metadata persisted in SQLite (`metadata.db`)
-* [x] Dockerfile + docker-compose.yml
-* [x] Docker Hub images for local deployment (`shubhamtrgupta/chroma`, `shubhamtrgupta/rag_new`)
-* [x] Render deployment link
-* [x] Public Postman collection URL (replace placeholder above)
-* [x] Automated tests with `pytest`
-* [x] This README.md (documentation)
 
 ---
 
