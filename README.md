@@ -170,6 +170,43 @@ If you prefer building locally from source:
 docker compose up --build
 ```
 
+
+
+
+
+
+## 🌍 Docker — Public Deployment (Render or Similar)
+
+This project can be easily deployed to cloud services like **Render**, **Railway**, or **AWS ECS** using the prebuilt Docker Hub image.  
+
+### **Steps to Deploy on Render**
+1. **Create a new Web Service** in Render.
+2. Choose **"Deploy from Docker"** as the method.
+3. In **Docker Image** field, enter:
+```
+
+shubhamtrgupta/rag_new
+
+````
+4. Set **Environment Variables** in Render’s dashboard (from your local `.env` file):
+```dotenv
+GOOGLE_API_KEY=your_google_api_key
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+CHROMA_HOST=https://chroma-kkpc.onrender.com
+CHROMA_PORT=443
+CHROMA_COLLECTION=rag_docs
+````
+
+5. **Port**: Set to `8000` (Render automatically maps this to a public URL).
+6. Click **Create Web Service** — Render will pull the image from Docker Hub and deploy it.
+7. Once deployed, you can access:
+
+   * **App:** `https://your-service-name.onrender.com`
+   * **Swagger UI:** `https://your-service-name.onrender.com/docs`
+   * **ReDoc:** `https://your-service-name.onrender.com/redoc`
+
+
+
 ---
 
 ## 📚 API Endpoints
