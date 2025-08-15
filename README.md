@@ -6,6 +6,38 @@ It is fully containerized with Docker and tested with `pytest`.
 
 ---
 
+## 🌐 Live Deployment
+
+* **App (Render):** [https://rag-new-zjxw.onrender.com](https://rag-new-zjxw.onrender.com)
+* **Swagger UI:** [https://rag-new-zjxw.onrender.com/docs](https://rag-new-zjxw.onrender.com/docs)
+* **ReDoc:** [https://rag-new-zjxw.onrender.com/redoc](https://rag-new-zjxw.onrender.com/redoc)
+
+---
+
+## 📦 Postman Collection
+
+* **Public Postman Collection URL:** `https://www.postman.com/collections/ADD_YOUR_PUBLIC_COLLECTION_URL`
+
+  > Replace `ADD_YOUR_PUBLIC_COLLECTION_URL` with your actual public link from Postman (Share → Create public link).
+
+**Recommended Postman Environment**
+
+```json
+{
+  "baseUrl": "https://rag-new-zjxw.onrender.com"
+}
+```
+
+For local testing set `baseUrl` to `http://localhost:8000`.
+
+Quick requests:
+
+* `{{baseUrl}}/health`
+* `{{baseUrl}}/documents`
+* `{{baseUrl}}/query`
+
+---
+
 ## ✨ Features
 
 * **Upload PDFs** (up to 20 docs, 1000 pages each)
@@ -47,7 +79,7 @@ It is fully containerized with Docker and tested with `pytest`.
 
 ## ⚙️ Setup & Installation
 
-### 1) Local environment
+### 1) Local environment (from source)
 
 ```bash
 python -m venv .venv
@@ -58,7 +90,7 @@ pip install -r app/requirements.txt
 
 ### 2) Environment variables
 
-Create a `.env` file:
+Create a `.env` file in the project root:
 
 ```dotenv
 APP_ENV=dev
@@ -85,7 +117,7 @@ METADATA_DB=app/db/metadata.db
 
 ## ▶️ Run the App
 
-**Local (dev mode):**
+### Local (dev mode from source)
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -96,29 +128,53 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ---
 
-## 🐳 Docker Deployment
+## 🐳 Docker — Local Deployment (using Docker Hub images)
 
-**Build & run with Docker Compose:**
+Use the published images to avoid local builds.
 
-```bash
-docker compose up --build
-```
+**Docker Hub Images**
 
-**docker-compose.yml** (already included):
+* **ChromaDB:** `shubhamtrgupta/chroma`
+* **App:** `shubhamtrgupta/rag_new`
+
+**docker-compose.yml**
 
 ```yaml
 version: "3.9"
 services:
-  rag-api:
-    build: ./app
-    env_file: .env
-    ports:
-      - "${PORT:-8000}:8000"
+  chromadb:
+    image: shubhamtrgupta/chroma
     volumes:
       - rag_data:/data
     restart: unless-stopped
+
+  rag-api:
+    image: shubhamtrgupta/rag_new
+    env_file: .env
+    ports:
+      - "${PORT:-8000}:8000"
+    depends_on:
+      - chromadb
+    restart: unless-stopped
+
 volumes:
   rag_data:
+```
+
+**Run**
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+* App: [http://localhost:8000](http://localhost:8000)
+* Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+If you prefer building locally from source:
+
+```bash
+docker compose up --build
 ```
 
 ---
@@ -132,6 +188,9 @@ volumes:
 ### Documents
 
 * `POST /documents/upload` → Upload PDFs (≤ 20 files, ≤ 1000 pages each)
+
+  * Content-Type: `multipart/form-data`
+  * Body: `files` (one or multiple PDF files)
 * `GET /documents` → List stored documents with metadata
 * `GET /documents/{doc_id}` → Get document details + stored metadata
 * `DELETE /documents/{doc_id}` → Delete document + embeddings
@@ -161,11 +220,30 @@ volumes:
 
 ---
 
+## 🧰 Postman Quick Tips
+
+* **Environment**: set `baseUrl` to the Render URL or `http://localhost:8000`.
+* **DELETE with path param**:
+
+  * Method: `DELETE`
+  * URL: `{{baseUrl}}/documents/{doc_id}`
+  * No body required.
+* **Upload files**:
+
+  * `POST {{baseUrl}}/documents/upload`
+  * Body → `form-data` → key: `files` (type: *File*), select 1–20 PDFs.
+* **Query**:
+
+  * `POST {{baseUrl}}/query`
+  * Body → `raw` JSON
+
+---
+
 ## 🔧 Key Implementation Details
 
 * **`document_processor.py`** → Extracts PDF text (`pypdf`), chunks (`langchain-text-splitters`), generates embeddings (`sentence-transformers`), stores vectors in **ChromaDB**, and updates metadata in `metadata.db`.
-* **`rag_pipeline.py`** → Implements retrieval pipeline: fetch relevant chunks from Chroma, build context prompt, call LLM (Gemini), and return grounded answers with citations.
-* **`endpoints.py`** → Defines API routes: upload documents, query system, and fetch metadata.
+* **`rag_pipeline.py`** → Retrieval pipeline: fetch relevant chunks from Chroma, build context prompt, call LLM (Gemini), and return grounded answers with citations.
+* **`endpoints.py`** → API routes for upload, query, and metadata.
 * **`config.py`** → Centralized runtime configuration via Pydantic settings.
 * **`main.py`** → Initializes FastAPI app, mounts routes, loads config.
 
@@ -181,11 +259,11 @@ pytest tests -q
 
 Includes:
 
-* **Upload tests** (`test_upload.py`) → verifies documents are processed and stored
-* **Query tests** (`test_query.py`) → verifies retrieval + LLM response (mocked)
+* **Upload tests** (`tests/test_upload.py`)
+* **Query tests** (`tests/test_query.py`)
 * API tests for invalid inputs (too many docs, oversized files, empty queries)
 
-Example (tests/test\_query.py):
+**Example (`tests/test_query.py`)**
 
 ```python
 def test_query_returns_answer(client):
@@ -204,8 +282,16 @@ def test_query_returns_answer(client):
 * [x] Upload + query endpoints with Chroma + Gemini
 * [x] Metadata persisted in SQLite (`metadata.db`)
 * [x] Dockerfile + docker-compose.yml
+* [x] Docker Hub images for local deployment (`shubhamtrgupta/chroma`, `shubhamtrgupta/rag_new`)
+* [x] Render deployment link
+* [x] Public Postman collection URL (replace placeholder above)
 * [x] Automated tests with `pytest`
 * [x] This README.md (documentation)
 
 ---
 
+## ✉️ Notes
+
+* Replace the Postman collection placeholder with your actual public share link.
+* Ensure `GOOGLE_API_KEY` is set in `.env` for Gemini usage.
+* Chroma persistence folder (`CHROMA_DIR`) should be backed by a Docker volume for data durability.
